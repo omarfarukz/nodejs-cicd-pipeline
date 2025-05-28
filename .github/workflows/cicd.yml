@@ -1,0 +1,49 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Run tests
+        run: |
+          mkdir -p test-results
+          npm test > test-results/results.txt
+
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: test-results/results.txt
+
+  deploy:
+    needs: test
+    runs-on: [self-hosted, node-runner]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Download test results
+        uses: actions/download-artifact@v3
+        with:
+          name: test-results
+
+      - name: Show test results
+        run: cat results.txt
+
+      - name: Deploy Node.js App
+        run: |
+          npm install
+          npm start
